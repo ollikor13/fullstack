@@ -44,8 +44,10 @@ blogsRouter.post('/', async (request, response, next) => { //Post
 })
 
   blogsRouter.delete('/:id', async (request, response, next) =>{ // Poista
-    const blogs = await Blog.find({})
-    const blog = await blogs[request.params.id]
+    /*const blogs = await Blog.find({})
+    const blog = await blogs[request.params.id]*/
+    const blog = await Blog.findById(request.params.id)
+    console.log(blog)
 
     try {
       const decodedToken = jwt.verify(request.token, process.env.SECRET)
@@ -70,13 +72,13 @@ blogsRouter.post('/', async (request, response, next) => { //Post
   const blogs = await Blog.find({})
   const blogtoShow = await blogs[request.params.id]
   const blog = {
-    title: blogtoShow.toJSON().title,
-    author: blogtoShow.toJSON().author,
-    url: blogtoShow.toJSON().url,
+    title: body.title,
+    author: body.author,
+    url: body.url,
     likes: body.likes
   } 
 
-  await Blog.findByIdAndUpdate(blogtoShow._id, blog, { new: true })
+  await Blog.findByIdAndUpdate(body.id, blog, { new: true })
   response.json(blog.toJSON)
 
   })
