@@ -5,22 +5,30 @@ import loginService from './services/login'
 import Blog from './components/Blog'
 import Notification from './components/Notification'
 import Togglable from './components/Togglable'
+import { useField } from './hooks/index'
 
 const App = () => {
-  const [blogs, setNotes] = useState([])
+
+  const [blogs, setBlogs] = useState([])
   const [errorMessage, setErrorMessage] = useState(null)
   const [errorType, setErrorType] = useState(false)
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
+  //const [username, setUsername] = useState('')
+  //const [password, setPassword] = useState('')
   const [user, setUser] = useState(null)
-  const [newTitle, setNewTitle] = useState('')
-  const [newAuthor, setNewAuthor] = useState('')
-  const [newUrl, setNewUrl] = useState('')
+  //const [newTitle, setNewTitle] = useState('')
+  //const [newAuthor, setNewAuthor] = useState('')
+  //const [newUrl, setNewUrl] = useState('')
+
+  const username = useField('text')
+  const password = useField('password')
+  const newTitle = useField('text')
+  const newAuthor = useField('text')
+  const newUrl = useField('text')
 
   useEffect(() => {
     blogService
       .getAll().then(initialBlogs => {
-        setNotes(initialBlogs)
+        setBlogs(initialBlogs)
       })
   }, [])
 
@@ -29,35 +37,35 @@ const App = () => {
     if (loggedUserJSON) {
       const user = JSON.parse(loggedUserJSON)
       setUser(user)
-      //blogService.setToken(user.token)
+      blogService.setToken(user.token)
     }
   }, [])
 
   const addBlog = (event) => {
     event.preventDefault()
     const blogObject = {
-      title: newTitle,
-      author: newAuthor,
-      url: newUrl,
+      title: newTitle.value,
+      author: newAuthor.value,
+      url: newUrl.value,
       id: blogs.length + 1,
     }
 
     blogService
       .create(blogObject)
       .then(data => {
-        setNotes(blogs.concat(data))
-        setNewTitle('')
-        setNewAuthor('')
-        setNewUrl('')
+        setBlogs(blogs.concat(data))
         setErrorType(false)
-        setErrorMessage('A new blog: ' + newTitle + ' was added!', errorType)
+        setErrorMessage('A new blog: ' + newTitle.value + ' was added!')
+        newTitle.resetValue()
+        newAuthor.resetValue()
+        newUrl.resetValue()
         setTimeout(() => {
           setErrorMessage(null)
         }, 5000)
       })
   }
 
-  const handleTitleChange = (event) => {
+  /*const handleTitleChange = (event) => {
     setNewTitle(event.target.value)
   }
   const handleAuthorChange = (event) => {
@@ -65,13 +73,13 @@ const App = () => {
   }
   const handleUrlChange = (event) => {
     setNewUrl(event.target.value)
-  }
+  }*/
 
   const handleLogin = async (event) => {
     event.preventDefault()
     try {
       const user = await loginService.login({
-        username, password,
+        username, password
       })
 
       window.localStorage.setItem(
@@ -79,11 +87,11 @@ const App = () => {
       )
       blogService.setToken(user.token)
       setUser(user)
-      setUsername('')
-      setPassword('')
+      username.setValue('')
+      password.setValue('')
     } catch (exception) {
       setErrorType(true)
-      setErrorMessage('wrong credentials', errorType)
+      setErrorMessage('wrong credentials')
       setTimeout(() => {
         setErrorMessage(null)
       }, 5000)
@@ -95,46 +103,55 @@ const App = () => {
       <div>
         username
         <input
-          type="text"
-          value={username}
-          name="Username"
-          onChange={({ target }) => setUsername(target.value)}
+          type={username.type}
+          value={username.value}
+          onChange={username.onChange}
         />
       </div>
       <div>
         password
         <input
-          type="password"
-          value={password}
-          name="Password"
-          onChange={({ target }) => setPassword(target.value)}
+          type={password.type}
+          value={password.value}
+          onChange={password.onChange}
         />
       </div>
       <button type="submit">login</button>
     </form>
   )
 
+  const resetAll = () => {
+    newTitle.resetValue()
+    newAuthor.resetValue()
+    newUrl.resetValue()
+  }
+
   const blogForm = () => (
     <div>
       <h1>Create new blog</h1>
       <form onSubmit={addBlog}>
       Title <input
-          value={newTitle}
-          onChange={handleTitleChange}
+          type={newTitle.type}
+          value={newTitle.value}
+          onChange={newTitle.onChange}
         />
         <br></br>
       Author <input
-          value={newAuthor}
-          onChange={handleAuthorChange}
+          type={newAuthor.type}
+          value={newAuthor.value}
+          onChange={newAuthor.onChange}
         />
         <br></br>
       Url <input
-          value={newUrl}
-          onChange={handleUrlChange}
+          type={newUrl.type}
+          value={newUrl.value}
+          onChange={newUrl.onChange}
         />
         <br></br>
         <button type="submit">Submit</button>
       </form>
+      <br></br>
+      <button onClick={resetAll}>Reset</button>
     </div>
   )
 
@@ -147,7 +164,7 @@ const App = () => {
   if (user === null) {
     return (
       <div className="loginDiv">
-        <Notification message={errorMessage}/>
+        <Notification message={errorMessage} error={errorType} />
         <div>
           <h2>Log in to application</h2>
           {loginForm()}
@@ -158,7 +175,7 @@ const App = () => {
 
   return (
     <div className="MainDiv">
-      <Notification message={errorMessage}/>
+      <Notification message={errorMessage} error={errorType}/>
       <h1>Blogs</h1>
       <p>{user.name} logged in
         <button onClick={() => logOut()}>Logout</button>
