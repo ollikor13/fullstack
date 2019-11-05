@@ -1,5 +1,5 @@
 /* eslint-disable linebreak-style */
-const initialState = { notification: '' }
+const initialState = { notification: '', error: false }
 
 const notificationReducer = (state = initialState, action) => {
   if(action !== undefined){
@@ -7,18 +7,19 @@ const notificationReducer = (state = initialState, action) => {
     case 'NULL':
       return { ...state, notification: '' }
     case 'TESTI':
-      return { ...state, notification: action.content }
+      return { ...state, notification: action.content, error: action.error }
     default:
       return state
     }
   }
 }
 
-export const setNotification = (message, time) => {
+export const setNotification = (message, error, time) => {
   return async dispatch => {
     dispatch ({
       type: 'TESTI',
-      content: message
+      content: message,
+      error: error
     })
     setTimeout(() => {
       dispatch ({

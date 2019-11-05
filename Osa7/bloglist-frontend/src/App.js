@@ -1,18 +1,20 @@
 /* eslint-disable linebreak-style */
-import React, { useState, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import blogService from './services/blogs'
 import loginService from './services/login'
 import Blog from './components/Blog'
 import Notification from './components/Notification'
-import Togglable from './components/Togglable'
+import './App.css'
 import { useField } from './hooks/index'
+import { connect } from 'react-redux'
+import { setNotification }  from './reducers/notificationReducer'
+import { createBlog, initBlogs } from './reducers/blogReducer'
+import { logIn, setUser } from './reducers/loginReducer'
+import Menu from './components/Menu'
+import { Table, Button, Form, Accordion, Card } from 'react-bootstrap'
 
-const App = () => {
+const App = (props) => {
 
-  const [blogs, setBlogs] = useState([])
-  const [errorMessage, setErrorMessage] = useState('')
-  const [errorType, setErrorType] = useState(false)
-  const [user, setUser] = useState(null)
   const username = useField('text')
   const password = useField('password')
   const newTitle = useField('text')
@@ -20,43 +22,30 @@ const App = () => {
   const newUrl = useField('text')
 
   useEffect(() => {
-    blogService
-      .getAll().then(initialBlogs => {
-        setBlogs(initialBlogs)
-      })
+    props.initBlogs()
   }, [])
 
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem('loggedBlogAppUser')
     if (loggedUserJSON) {
       const user = JSON.parse(loggedUserJSON)
-      setUser(user)
+      props.setUser(user)
       blogService.setToken(user.token)
     }
   }, [])
 
-  const addBlog = (event) => {
+  const addBlog = async (event) => {
     event.preventDefault()
     const blogObject = {
       title: newTitle.value,
       author: newAuthor.value,
       url: newUrl.value,
-      id: blogs.length + 1,
+      id: props.blogs.length + 1,
     }
-
-    blogService
-      .create(blogObject)
-      .then(data => {
-        setBlogs(blogs.concat(data))
-        setErrorType(false)
-        setErrorMessage('A new blog: ' + newTitle.value + ' was added!')
-        newTitle.resetValue()
-        newAuthor.resetValue()
-        newUrl.resetValue()
-        setTimeout(() => {
-          setErrorMessage(null)
-        }, 5000)
-      })
+    const newBlog = await blogService.create(blogObject)
+    props.createBlog(newBlog)
+    props.setNotification(('A new blog: ' + newTitle.value + ' was added!'), false, 5)
+    resetAll()
   }
 
 
@@ -70,38 +59,26 @@ const App = () => {
       window.localStorage.setItem(
         'loggedBlogAppUser', JSON.stringify(user)
       )
-      blogService.setToken(user.token)
-      setUser(user)
+      props.logIn(user)
+      window.location.reload()
     } catch (exception) {
-      console.log(exception)
-      setErrorType(true)
-      setErrorMessage('wrong credentials')
-      setTimeout(() => {
-        setErrorMessage(null)
-      }, 5000)
+      props.setNotification(('wrong credentials'), true, 5)
     }
   }
 
   const loginForm = () => (
-    <form onSubmit={handleLogin} >
-      <div>
-        username
-        <input
-          type={username.type}
-          value={username.value}
-          onChange={username.onChange}
-        />
-      </div>
-      <div>
-        password
-        <input
-          type={password.type}
-          value={password.value}
-          onChange={password.onChange}
-        />
-      </div>
-      <button type="submit">login</button>
-    </form>
+    <Form onSubmit={handleLogin}>
+      <Form.Group controlId="formBasicEmail">
+        <Form.Label>Username</Form.Label>
+        <Form.Control type={username.type} value={username.value} onChange={username.onChange} placeholder="Username" />
+      </Form.Group>
+
+      <Form.Group controlId="formBasicPassword">
+        <Form.Label>Password</Form.Label>
+        <Form.Control type={password.type} value={password.value} onChange={password.onChange} placeholder="Password" />
+      </Form.Group>
+      <Button type="submit" variant="secondary">Login</Button>
+    </Form>
   )
 
   const resetAll = () => {
@@ -113,42 +90,30 @@ const App = () => {
   const blogForm = () => (
     <div>
       <h1>Create new blog</h1>
-      <form onSubmit={addBlog}>
-      Title <input
-          type={newTitle.type}
-          value={newTitle.value}
-          onChange={newTitle.onChange}
-        />
-        <br></br>
-      Author <input
-          type={newAuthor.type}
-          value={newAuthor.value}
-          onChange={newAuthor.onChange}
-        />
-        <br></br>
-      Url <input
-          type={newUrl.type}
-          value={newUrl.value}
-          onChange={newUrl.onChange}
-        />
-        <br></br>
-        <button type="submit">Submit</button>
-      </form>
-      <br></br>
-      <button onClick={resetAll}>Reset</button>
+      <Form onSubmit={addBlog}>
+        <Form.Group >
+          <Form.Label>Title</Form.Label>
+          <Form.Control type={newTitle.type} value={newTitle.value} onChange={newTitle.onChange} placeholder="Title" />
+        </Form.Group>
+
+        <Form.Group >
+          <Form.Label>Author</Form.Label>
+          <Form.Control type={newAuthor.type} value={newAuthor.value} onChange={newAuthor.onChange} placeholder="Author" />
+        </Form.Group>
+        <Form.Group >
+          <Form.Label>Url</Form.Label>
+          <Form.Control type={newUrl.type} value={newUrl.value} onChange={newUrl.onChange} placeholder="Url" />
+        </Form.Group>
+        <Button type="submit" variant="secondary">Submit</Button>
+        <Button onClick={resetAll} variant="secondary">Reset</Button>
+      </Form>
     </div>
   )
 
-  const logOut = () => {
-    window.localStorage.removeItem('loggedBlogAppUser')
-    window.location.reload()
-  }
-
-
-  if (user === null) {
+  if (props.user.username === '') {
     return (
-      <div className="loginDiv">
-        <Notification message={errorMessage} error={errorType} />
+      <div className="MainDiv">
+        <Notification />
         <div>
           <h2>Log in to application</h2>
           {loginForm()}
@@ -159,20 +124,57 @@ const App = () => {
 
   return (
     <div className="MainDiv">
-      <Notification message={errorMessage} error={errorType}/>
+      <Notification/>
+      <Menu user={props.user} />
       <h1>Blogs</h1>
-      <p>{user.name} logged in
-        <button onClick={() => logOut()}>Logout</button>
-      </p>
-      <Togglable buttonLabel="Add new blog">
-        {blogForm()}
-      </Togglable>
+      <Accordion>
+        <Card>
+          <Card.Header>
+            <Accordion.Toggle as={Button} variant="link" eventKey="0">
+              <Button variant="secondary">Add a new blog</Button>
+            </Accordion.Toggle>
+          </Card.Header>
+          <Accordion.Collapse eventKey="0">
+            {blogForm()}
+          </Accordion.Collapse>
+        </Card>
+      </Accordion>
       <h2>Blogs:</h2>
-      {blogs.sort((a, b) => parseFloat(b.likes) - parseFloat(a.likes)).map(blog =>
-        <Blog key={blog.id} blog={blog} user={user} />
-      )}
+      <Table striped>
+        <tbody>
+          {props.blogs.sort((a, b) => parseFloat(b.likes) - parseFloat(a.likes)).map(blog =>
+            <tr key={blog.id}>
+              <td>
+                <Blog key={blog.id} blog={blog} user={props.user} />
+              </td>
+            </tr>)}
+        </tbody>
+      </Table>
+
     </div>
   )
 }
 
-export default App
+/*      {props.blogs.sort((a, b) => parseFloat(b.likes) - parseFloat(a.likes)).map(blog =>
+        <Blog key={blog.id} blog={blog} user={props.user} />
+      )}*/
+
+const mapStateToProps = (state) => {
+  return {
+    blogs: state.blogs,
+    user: state.user
+  }
+}
+
+const mapDispatchToProps = {
+  setNotification,
+  createBlog,
+  initBlogs,
+  logIn,
+  setUser
+}
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(App)

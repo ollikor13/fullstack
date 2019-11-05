@@ -1,57 +1,33 @@
 /* eslint-disable linebreak-style */
-
-import { createStore } from 'redux'
 import React from 'react'
 import './Notification.css'
+import { connect } from 'react-redux'
 
-const notificationReducer = (state = '', action) => {
-  if(action !== undefined){
-    switch (action.type) {
-    case 'NULL':
-      return { ...state, notification: '' }
-    case 'TESTI':
-      return { ...state, notification: action.content }
-    default:
-      return state
-    }
-  }
-}
+const Notification = (props) => {
 
-export const setNotification = (message, time) => {
-  return async dispatch => {
-    dispatch ({
-      type: 'TESTI',
-      content: message
-    })
-    setTimeout(() => {
-      dispatch ({
-        type: 'NULL'
-      })}
-    , time*1000)
-  }
-}
-
-const store = createStore(notificationReducer)
-
-const Notification = ({ message, error }) => {
-  if (message === null || message === '' ) {
-    store.dispatch({ type: 'NULL'})
+  if (props.notification.notification === null || props.notification.notification === '' ) {
     return null
-  }else if(error===true){
-    store.dispatch({ type: 'TESTI', content: message })
+  }else if(props.notification.error===true){
     return (
       <div className="error">
-        {store.getState().notification}
+        {props.notification.notification}
       </div>
     )
   }else{
-    store.dispatch({ type: 'TESTI', content: message })
     return (
       <div className="message">
-        {store.getState().notification}
+        {props.notification.notification}
       </div>
     )
   }
 }
 
-export default Notification
+const mapStateToProps = (state) => {
+  return {
+    notification: state.notifications
+  }
+}
+
+export default connect(
+  mapStateToProps,
+)(Notification)

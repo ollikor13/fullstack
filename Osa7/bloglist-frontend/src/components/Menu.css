@@ -1,0 +1,8 @@
+.menuStyle {
+  float: left;
+  margin: 5px;
+}
+.menu{
+  background-color: lightgray;
+  height: 2em;
+}

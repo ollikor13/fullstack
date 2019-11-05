@@ -5,7 +5,7 @@ const notificationReducer = (state = initialState, action) => {
         switch (action.type) {
             case 'NULL':
                 return {...state, notification: ''}
-            case 'VOTEs':
+            case 'VOTE':
                 return { ...state, notification: ('You voted: ' + action.content)}
             case 'TESTI':
                 return { ...state, notification: action.content}
