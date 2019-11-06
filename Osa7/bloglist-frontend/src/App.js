@@ -93,16 +93,16 @@ const App = (props) => {
       <Form onSubmit={addBlog}>
         <Form.Group >
           <Form.Label>Title</Form.Label>
-          <Form.Control type={newTitle.type} value={newTitle.value} onChange={newTitle.onChange} placeholder="Title" />
+          <Form.Control id='title' type={newTitle.type} value={newTitle.value} onChange={newTitle.onChange} placeholder="Title" />
         </Form.Group>
 
         <Form.Group >
           <Form.Label>Author</Form.Label>
-          <Form.Control type={newAuthor.type} value={newAuthor.value} onChange={newAuthor.onChange} placeholder="Author" />
+          <Form.Control id='author' type={newAuthor.type} value={newAuthor.value} onChange={newAuthor.onChange} placeholder="Author" />
         </Form.Group>
         <Form.Group >
           <Form.Label>Url</Form.Label>
-          <Form.Control type={newUrl.type} value={newUrl.value} onChange={newUrl.onChange} placeholder="Url" />
+          <Form.Control id='url' type={newUrl.type} value={newUrl.value} onChange={newUrl.onChange} placeholder="Url" />
         </Form.Group>
         <Button type="submit" variant="secondary">Submit</Button>
         <Button onClick={resetAll} variant="secondary">Reset</Button>
