@@ -125,7 +125,10 @@ const resolvers = {
     addBook: (root, args) => {
       const book = { ...args, id: uuid() }
       books = books.concat(book)
-      if(!authors.includes(args.author)){
+
+      let isPresent = authors.some(function(el){ return el.name === args.author});
+
+      if(!isPresent){
         const author = { name: args.author, id: uuid() }
         authors = authors.concat(author)
       }
