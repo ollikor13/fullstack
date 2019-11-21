@@ -19,7 +19,7 @@ const ALL_AUTHORS = gql`
   allAuthors  {
     name,
     born,
-    bookCount
+    numberofBooks
   }
 }
 `
@@ -49,7 +49,7 @@ const Authors = (props) => {
               <tr key={a.name}>
                 <td>{a.name}</td>
                 <td>{a.born}</td>
-                <td>{a.bookCount}</td>
+                <td>{a.numberofBooks}</td>
               </tr>
             )}
           </tbody>
