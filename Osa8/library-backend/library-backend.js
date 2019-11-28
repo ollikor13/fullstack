@@ -5,6 +5,8 @@ const Author = require('./models/author')
 const Book = require('./models/book')
 const User = require('./models/user')
 const ObjectId = require('mongoose').Types.ObjectId;
+const { PubSub } = require('apollo-server')
+const pubsub = new PubSub()
 ObjectId.prototype.valueOf = function () {
 	return this.toString();
 };
@@ -113,12 +115,14 @@ let books = [
 ]
 
 const typeDefs = gql`
+  type Subscription {
+    bookAdded: Book!
+  }  
   type User {
     username: String!
     favoriteGenre: String!
     id: ID!
   }
-
   type Token {
     value: String!
   }
@@ -197,6 +201,7 @@ const resolvers = {
                 invalidArgs: args,
             })
             }
+            pubsub.publish('BOOK_ADDED', { bookAdded: book })
             return book
           }
         } catch(exception) {
@@ -241,8 +246,7 @@ const resolvers = {
 
       return { value: jwt.sign(userForToken, JWT_SECRET) }
     },
-  }
-  ,
+  },
   Query: {
     hello: () => { return "world" },
     bookCount: () => {
@@ -250,6 +254,10 @@ const resolvers = {
     },
     authorCount: () => Author.collection.countDocuments(),
     allBooks: async (root, args) => {
+      if(args.genre){
+        let books = await Book.find({})
+        return books.filter(book => book.genres.includes(args.genre))
+      }
       return await Book.find({})
     },
     allAuthors: () => {
@@ -278,6 +286,11 @@ const resolvers = {
     },
 
   },
+  Subscription: {
+    bookAdded: {
+      subscribe: () => pubsub.asyncIterator(['BOOK_ADDED'])
+    },
+  },
 }
 
 const server = new ApolloServer({
@@ -295,6 +308,7 @@ const server = new ApolloServer({
   }
 })
 
-server.listen().then(({ url }) => {
+server.listen().then(({ url, subscriptionsUrl }) => {
   console.log(`Server ready at ${url}`)
+  console.log(`Subscriptions ready at ${subscriptionsUrl}`)
 })
